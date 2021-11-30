@@ -1,0 +1,196 @@
+﻿@page "/ConUsu"
+
+@inject NavigationManager NavigationManager
+
+@using System.Text.Json
+@using Tupa.Data
+
+<meta charset="UTF-8">
+<title> Tupã </title>
+<link rel="stylesheet" href="/css/MainLayout.css">
+<link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+
+
+<div class="@Auxilio.classSideBar">
+    <div class="logo-details">
+        <img src="css/Images/umbrella.png" class="@Auxilio.classLogo" />
+        <div class="logo_name">Tupã</div>
+        <i class="@Auxilio.classBotao" runat="server" id="btn" @onclick="Auxilio.reduzirMenu"></i>
+    </div>
+    <ul class="nav-list">
+        <li>
+            <a href="#" @onclick="goCadUsu">
+                <i class='bx bx-user-plus'></i>
+                <span class="links_name">Cadastrar usuários</span>
+            </a>
+            <span class="tooltip">Cadastrar usuários</span>
+        </li>
+        <li>
+            <a href="#" @onclick="goConUsu">
+                <i class='bx bx-user'></i>
+                <span class="links_name">Consultar usuários</span>
+            </a>
+            <span class="tooltip">Consultar usuários</span>
+        </li>
+        <li>
+            <a href="#" @onclick="goCadAviso">
+                <i class='bx bx-error'></i>
+                <span class="links_name">Cadastrar alertas</span>
+            </a>
+            <span class="tooltip">Adicionar alertas</span>
+        </li>
+        <li>
+            <a href="#" @onclick="goConAviso">
+                <i class='bx bx-bell'></i>
+                <span class="links_name">Consultar alertas</span>
+            </a>
+            <span class="tooltip">Consultar alertas</span>
+        </li>
+        <a class="out" href="" @onclick="sair">
+        <li class="profile">
+
+            <i class='bx bx-log-out' id="log_out"> </i>
+
+        </li>
+        </a>
+    </ul>
+</div>
+<section class="home-section">
+    <div class="Title" style="width: 70%; margin-left: 15% ">
+        <h3>Usuários</h3>
+    </div>
+    <div class="buscar">
+        <label class="lblcon" style="margin-left: 8%;">Id:</label>
+        <input class="inputcon" style="width: 16%;" />
+        <label class="lblcon">Nome:</label>
+        <input class="inputcon" style="width: 20%;" />
+        <label class="lblcon">Email:</label>
+        <input class="inputcon" style="width: 20%;" />
+        <br />
+        <br />
+        <label class="lblcon" style="margin-left: 8%;">Email confirmado:</label>
+        <select class="selectcon" name="confirmado" id="confirmado">
+            <option value="true">Sim</option>
+            <option value="false">Não</option>
+        </select>
+        <label class="lblcon">Tipo:</label>
+        <select class="selectcon" name="usuario" id="usuario">
+            <option value="true">Usuário</option>
+            <option value="false">Administrador</option>
+        </select>
+        <button class="botaocon"> <i class='bx bx-search'></i></button>
+
+    </div>
+
+    <div class="principal" style="width: 70%; height: 55vh; margin-left: 15%; font-size: 15px;">
+        <div class="container" style=" overflow: auto;">
+            <table>
+                <tr>
+                    <th style="width:20%">Id</th>
+                    <th style="width:25%">Nome</th>
+                    <th style="width:25%">Email</th>
+                    <th style="width:20%">Email confirmado</th>
+                    <th style="width:10%">Tipo</th>
+                </tr>
+
+                @if (usuData != null)
+                {
+
+                    foreach (UsuarioData data in usuData)
+                    {
+                        <tr>
+                            <td>@data.userId</td>
+                            <td>@data.userName</td>
+                            <td>@data.email</td>
+                            <td>@data.emailConfirmed.ToString()</td>
+                            <td>@data.tipoUsuario</td>
+                        </tr>
+                    }
+                }
+
+
+            </table>
+        </div>
+
+        <div class="aviso" style="margin-top: 3vh;">
+            <label class="aviso" style="margin-top:1vh"> @avisoCad</label>
+        </div>
+    </div>
+</section>
+
+
+
+@code {
+    private string avisoCad = "";
+    private void goCadUsu()
+    {
+        NavigationManager.NavigateTo("/CadUsu", true);
+
+    }
+
+    private void goConUsu()
+    {
+        NavigationManager.NavigateTo("/ConUsu", true);
+    }
+
+    private void goCadAviso()
+    {
+        NavigationManager.NavigateTo("/CadAviso", true);
+    }
+
+    private void goConAviso()
+    {
+        NavigationManager.NavigateTo("/ConAviso", true);
+    }
+
+    private async Task sair()
+    {
+        var response = await client.PostAsync($"/api/Account/logout", null);
+        NavigationManager.NavigateTo("/index", true);
+
+    }
+
+}
+
+
+
+@code
+{
+
+
+     private IList<UsuarioData> usuData = null;
+
+
+     private static readonly HttpClient client = new HttpClient();
+     private static string baseAddress = "https://tupaserver.azurewebsites.net/";
+
+
+     protected override async Task OnInitializedAsync()
+     {
+     if (client.BaseAddress == null)
+     {
+     client.BaseAddress = new Uri(baseAddress);
+
+     }
+     
+        try {
+          client.DefaultRequestHeaders.Clear();
+          client.DefaultRequestHeaders.Accept.Clear();
+          client.DefaultRequestHeaders.Add("Authorization", String.Format("Bearer {0}", Message.token));
+
+          var response = await client.GetAsync($"/api/v1/Usuarios");
+          var responseString = await response.Content.ReadAsStringAsync();
+          var responseJson = JsonSerializer.Deserialize<Response<IList<UsuarioData>>>(responseString);
+
+          usuData = responseJson.data;
+          avisoCad = "";
+         }
+         catch
+         {
+            avisoCad = "Tente novamente em alguns instantes."; 
+         }
+    }
+
+}
+
+}
